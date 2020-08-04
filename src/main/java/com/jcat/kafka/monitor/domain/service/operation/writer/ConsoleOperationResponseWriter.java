@@ -3,12 +3,14 @@ package com.jcat.kafka.monitor.domain.service.operation.writer;
 import com.jcat.kafka.monitor.domain.model.response.DescribeOperationResponse;
 import com.jcat.kafka.monitor.domain.model.response.OperationResponse;
 
+import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ConsoleOperationResponseWriter implements OperationResponseWriter {
 
 	private static final ExecutorService CONSOLE_WRITER_EXECUTOR;
+	private static final String EMPTY_VALUE = "-";
 
 	static {
 
@@ -32,7 +34,7 @@ public class ConsoleOperationResponseWriter implements OperationResponseWriter {
 		if (operationResponse instanceof DescribeOperationResponse) {
 			DescribeOperationResponse describeOperationResponse = (DescribeOperationResponse) operationResponse;
 			CONSOLE_WRITER_EXECUTOR.submit(() -> {
-				System.out.println(map(describeOperationResponse));
+				writeInternal(describeOperationResponse);
 			});
 		}
 	}
@@ -45,7 +47,7 @@ public class ConsoleOperationResponseWriter implements OperationResponseWriter {
 				if (operationResponse instanceof DescribeOperationResponse) {
 					DescribeOperationResponse describeOperationResponse = (DescribeOperationResponse) operationResponse;
 					//sout
-					System.out.println(map(describeOperationResponse));
+					writeInternal(describeOperationResponse);
 				}
 			} catch (Exception e) {
 				//ignore or log it, whar we can do here
@@ -54,31 +56,21 @@ public class ConsoleOperationResponseWriter implements OperationResponseWriter {
 		});
 	}
 
-	private String map(DescribeOperationResponse describeOperationResponse) {
-		StringBuilder stringBuilder = new StringBuilder();
-		describeOperationResponse.getGroupDescriptions().forEach(gd -> {
-			gd.getMembers().forEach(m -> {
-				m.getAssignment().getTopicPartitions().stream().forEach(tp -> {
-					System.out.format("%-30s", gd.getGroupId());
-					System.out.format("%-15s", tp.getTopic());
-					System.out.format("%-4d", tp.getPartition());
-					DescribeOperationResponse.ConsumerGroupDescriptionFull.MemberDescription.MemberAssignment.TopicPartition.OffsetMetadata offsetMetadata = tp.getOffsetMetadata();
-					System.out.format("%-15d", offsetMetadata.getOffset());
-					System.out.format("%-15d",tp.getTopicLogEndOffset());
-					//lag here
-					System.out.format("%-10d",calculateLag(tp.getTopicLogEndOffset(), offsetMetadata.getOffset()));
-					System.out.format("%-50s",m.getMemberId());
-					System.out.format("%-15s",m.getClientId());
-					System.out.format("%-20s",m.getHost());
-					System.out.println();
-				});
-			});
+	private void writeInternal(DescribeOperationResponse describeOperationResponse) {
+		describeOperationResponse.getTopicPartitions().forEach(tp -> {
+			System.out.format("%-30s", tp.getGroup());
+			System.out.format("%-15s", tp.getTopic());
+			System.out.format("%-4d", tp.getPartition());
+			Optional<DescribeOperationResponse.TopicPartitionInfo.Offset> optionalOffset = Optional.ofNullable(tp.getOffset());
+			System.out.format("%-15s", optionalOffset.map(DescribeOperationResponse.TopicPartitionInfo.Offset::getGroup).map(Object::toString).orElse(EMPTY_VALUE));
+			System.out.format("%-15s", optionalOffset.map(DescribeOperationResponse.TopicPartitionInfo.Offset::getTopic).map(Object::toString).orElse(EMPTY_VALUE));
+			//lag here
+			System.out.format("%-10d", tp.getLag());
+			Optional<DescribeOperationResponse.TopicPartitionInfo.MemberInfo> m = Optional.ofNullable(tp.getMemberInfo());
+			System.out.format("%-50s", m.map(DescribeOperationResponse.TopicPartitionInfo.MemberInfo::getId).orElse(EMPTY_VALUE));
+			System.out.format("%-15s", m.map(DescribeOperationResponse.TopicPartitionInfo.MemberInfo::getClientId).orElse(EMPTY_VALUE));
+			System.out.format("%-20s", m.map(DescribeOperationResponse.TopicPartitionInfo.MemberInfo::getHost).orElse(EMPTY_VALUE));
+			System.out.println();
 		});
-		return stringBuilder.toString();
 	}
-
-	public long calculateLag(long topicOffset, long cgOffset) {
-		return topicOffset - cgOffset;
-	}
-
 }

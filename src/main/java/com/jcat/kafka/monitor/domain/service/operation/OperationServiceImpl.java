@@ -72,70 +72,66 @@ public class OperationServiceImpl implements OperationService {
 		List<Object> allFutures = new ArrayList<>(consumerGroupOffsetFuturesMap.values());
 		allFutures.add(describeFuture);
 		allFutures.add(topicOffsetFuture);
-		CompletableFuture<?>[] allFuturesArray = allFutures.toArray(new CompletableFuture<?>[allFutures.size()]);
+		CompletableFuture<?>[] allFuturesArray = allFutures.toArray(new CompletableFuture<?>[0]);
 		return CompletableFuture.allOf(allFuturesArray).thenApply((voitt) -> {
 			try {
-				Map<String, ConsumerGroupDescription> groupMap = describeFuture.get();
+				DescribeOperationResponse response = new DescribeOperationResponse();
+				Collection<DescribeOperationResponse.TopicPartitionInfo> topicPartitionInfoCollection = new ArrayList<>(consumerGroupOffsetFuturesMap.size());
+				response.setTopicPartitions(topicPartitionInfoCollection);
+
+				Map<String, ConsumerGroupDescription> consumerGroupMap = describeFuture.get();
 				Map<TopicPartition, Long> topicPartitionOffsetMap = topicOffsetFuture.get();
-				List<DescribeOperationResponse.ConsumerGroupDescriptionFull> consumerGroupDescriptionFulls = groupMap.values().stream()
-						.map(cg -> {
-							try {
-								DescribeOperationResponse.ConsumerGroupDescriptionFull consumerGroupDescriptionFull = new DescribeOperationResponse.ConsumerGroupDescriptionFull();
-								consumerGroupDescriptionFull.setGroupId(cg.groupId());
-								consumerGroupDescriptionFull.setPartitionAssignor(cg.partitionAssignor());
-								consumerGroupDescriptionFull.setSimpleConsumerGroup(cg.isSimpleConsumerGroup());
-								consumerGroupDescriptionFull.setState(cg.state());
+				consumerGroupOffsetFuturesMap.forEach((consumerGroup, value) -> {
+					try {
 
-								CompletableFuture<Map<TopicPartition, OffsetAndMetadata>> offsetFuture = consumerGroupOffsetFuturesMap.get(cg.groupId());
-								if (offsetFuture == null) {
-									throw new RuntimeException("No group id=\"" + cg + "\" contains in offsets");
+						//try to get consumerGroupDescription
+						ConsumerGroupDescription consumerGroupDescription = consumerGroupMap.get(consumerGroup);
+
+						value.get().forEach((tp, consumerGroupOffset) -> {
+							DescribeOperationResponse.TopicPartitionInfo topicPartitionInfo = new DescribeOperationResponse.TopicPartitionInfo();
+							topicPartitionInfoCollection.add(topicPartitionInfo);
+
+							topicPartitionInfo.setGroup(consumerGroup);
+							topicPartitionInfo.setTopic(tp.topic());
+							topicPartitionInfo.setPartition(tp.partition());
+
+							DescribeOperationResponse.TopicPartitionInfo.Offset offset = new DescribeOperationResponse.TopicPartitionInfo.Offset();
+							topicPartitionInfo.setOffset(offset);
+							offset.setGroup(consumerGroupOffset.offset());
+							offset.setTopic(topicPartitionOffsetMap.get(tp));
+
+							topicPartitionInfo.setLag(calculateLag(topicPartitionInfo));
+
+							Collection<MemberDescription> members = consumerGroupDescription.members();
+							if (members.size() > 0) {
+								//get member for partition here
+								MemberDescription memberForPartition = getMemberForPartition(tp, members);
+								if (memberForPartition != null) {
+									DescribeOperationResponse.TopicPartitionInfo.MemberInfo memberInfo = new DescribeOperationResponse.TopicPartitionInfo.MemberInfo();
+									memberInfo.setClientId(memberForPartition.clientId());
+									memberInfo.setHost(memberForPartition.host());
+									memberInfo.setId(memberForPartition.consumerId());
+									topicPartitionInfo.setMemberInfo(memberInfo);
 								}
-								Map<TopicPartition, OffsetAndMetadata> topicPartitionOffsetAndMetadataMap = offsetFuture.get();
-								Set<DescribeOperationResponse.ConsumerGroupDescriptionFull.MemberDescription> memberDescriptions = cg.members().stream()
-										.map(memberDescription -> {
-											DescribeOperationResponse.ConsumerGroupDescriptionFull.MemberDescription md = new DescribeOperationResponse.ConsumerGroupDescriptionFull.MemberDescription();
-											md.setClientId(memberDescription.clientId());
-											md.setHost(memberDescription.host());
-											md.setMemberId(memberDescription.consumerId());
-
-											DescribeOperationResponse.ConsumerGroupDescriptionFull.MemberDescription.MemberAssignment memberAssignment = new DescribeOperationResponse.ConsumerGroupDescriptionFull.MemberDescription.MemberAssignment();
-											md.setAssignment(memberAssignment);
-
-											Set<DescribeOperationResponse.ConsumerGroupDescriptionFull.MemberDescription.MemberAssignment.TopicPartition> collectionTPs = memberDescription.assignment().topicPartitions().stream()
-													.map(tp -> {
-														OffsetAndMetadata offsetAndMetadata = topicPartitionOffsetAndMetadataMap.get(tp);
-														DescribeOperationResponse.ConsumerGroupDescriptionFull.MemberDescription.MemberAssignment.TopicPartition topicPartition = new DescribeOperationResponse.ConsumerGroupDescriptionFull.MemberDescription.MemberAssignment.TopicPartition();
-														topicPartition.setPartition(tp.partition());
-														topicPartition.setTopic(tp.topic());
-														Long topicLogEndOffset = topicPartitionOffsetMap.get(tp);
-														topicPartition.setTopicLogEndOffset(topicLogEndOffset == null ? 0L : topicLogEndOffset);
-
-														if (offsetAndMetadata != null) {
-															DescribeOperationResponse.ConsumerGroupDescriptionFull.MemberDescription.MemberAssignment.TopicPartition.OffsetMetadata offsetMetadata = new DescribeOperationResponse.ConsumerGroupDescriptionFull.MemberDescription.MemberAssignment.TopicPartition.OffsetMetadata(offsetAndMetadata.offset(), offsetAndMetadata.metadata());
-															topicPartition.setOffsetMetadata(offsetMetadata);
-														}
-														return topicPartition;
-
-													}).collect(Collectors.toSet());
-											memberAssignment.setTopicPartitions(collectionTPs);
-											return md;
-
-										}).collect(Collectors.toSet());
-								consumerGroupDescriptionFull.setMembers(memberDescriptions);
-								return consumerGroupDescriptionFull;
-
-							} catch (Exception e) {
-								//
-								throw new RuntimeException();
 							}
-						}).collect(Collectors.toList());
-				DescribeOperationResponse describeOperationResponse = new DescribeOperationResponse();
-				describeOperationResponse.setGroupDescriptions(consumerGroupDescriptionFulls);
-				return describeOperationResponse;
+						});
+
+					} catch (Exception ex) {
+						//ignore
+					}
+				});
+				return response;
 			} catch (Exception e) {
 				throw new RuntimeException(e);
 			}
 		});
+	}
+
+	private MemberDescription getMemberForPartition(final TopicPartition tp, final Collection<MemberDescription> members) {
+		return members.stream()
+				.filter(md -> md.assignment().topicPartitions().contains(tp))
+				.findFirst()
+				.orElse(null);
 	}
 
 	public AdminClient getAdminClient() {
@@ -152,5 +148,11 @@ public class OperationServiceImpl implements OperationService {
 
 	public void setKafkaConsumer(final KafkaConsumer<String, String> kafkaConsumer) {
 		this.kafkaConsumer = kafkaConsumer;
+	}
+
+	private long calculateLag(DescribeOperationResponse.TopicPartitionInfo topicPartitionInfo) {
+		return Optional.ofNullable(topicPartitionInfo.getOffset())
+				.map(o -> o.getTopic() - o.getGroup())
+				.orElse(-1L);
 	}
 }

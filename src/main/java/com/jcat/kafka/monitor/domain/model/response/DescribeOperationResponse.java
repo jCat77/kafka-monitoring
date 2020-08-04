@@ -6,77 +6,106 @@ import java.util.Collection;
 
 public class DescribeOperationResponse implements OperationResponse {
 
-	private Collection<ConsumerGroupDescriptionFull> groupDescriptions;
+	private Collection<TopicPartitionInfo> topicPartitions;
 
-	public Collection<ConsumerGroupDescriptionFull> getGroupDescriptions() {
-		return groupDescriptions;
+	public Collection<TopicPartitionInfo> getTopicPartitions() {
+		return topicPartitions;
 	}
 
-	public void setGroupDescriptions(final Collection<ConsumerGroupDescriptionFull> groupDescriptions) {
-		this.groupDescriptions = groupDescriptions;
+	public void setTopicPartitions(final Collection<TopicPartitionInfo> topicPartitions) {
+		this.topicPartitions = topicPartitions;
 	}
 
-	public static class ConsumerGroupDescriptionFull {
+	public static class TopicPartitionInfo {
 
-		private String groupId;
-		private boolean isSimpleConsumerGroup;
-		private Collection<MemberDescription> members;
-		private String partitionAssignor;
-		private ConsumerGroupState state;
+		private String group;
+		private String topic;
+		private int partition;
+		private Offset offset;
+		private long lag;
+		private MemberInfo memberInfo;
 
-		public String getGroupId() {
-			return groupId;
+		public String getGroup() {
+			return group;
 		}
 
-		public void setGroupId(final String groupId) {
-			this.groupId = groupId;
+		public void setGroup(final String group) {
+			this.group = group;
 		}
 
-		public boolean isSimpleConsumerGroup() {
-			return isSimpleConsumerGroup;
+		public String getTopic() {
+			return topic;
 		}
 
-		public void setSimpleConsumerGroup(final boolean simpleConsumerGroup) {
-			isSimpleConsumerGroup = simpleConsumerGroup;
+		public void setTopic(final String topic) {
+			this.topic = topic;
 		}
 
-		public Collection<MemberDescription> getMembers() {
-			return members;
+		public int getPartition() {
+			return partition;
 		}
 
-		public void setMembers(final Collection<MemberDescription> members) {
-			this.members = members;
+		public void setPartition(final int partition) {
+			this.partition = partition;
 		}
 
-		public String getPartitionAssignor() {
-			return partitionAssignor;
+		public Offset getOffset() {
+			return offset;
 		}
 
-		public void setPartitionAssignor(final String partitionAssignor) {
-			this.partitionAssignor = partitionAssignor;
+		public void setOffset(final Offset offset) {
+			this.offset = offset;
 		}
 
-		public ConsumerGroupState getState() {
-			return state;
+		public long getLag() {
+			return lag;
 		}
 
-		public void setState(final ConsumerGroupState state) {
-			this.state = state;
+		public void setLag(final long lag) {
+			this.lag = lag;
 		}
 
-		public static class MemberDescription {
+		public MemberInfo getMemberInfo() {
+			return memberInfo;
+		}
 
-			private String memberId;
-			private String clientId;
-			private String host;
-			private MemberAssignment assignment;
+		public void setMemberInfo(final MemberInfo memberInfo) {
+			this.memberInfo = memberInfo;
+		}
 
-			public String getMemberId() {
-				return memberId;
+		public static class Offset {
+
+			private long group;
+			private long topic;
+
+			public long getGroup() {
+				return group;
 			}
 
-			public void setMemberId(final String memberId) {
-				this.memberId = memberId;
+			public void setGroup(final long group) {
+				this.group = group;
+			}
+
+			public long getTopic() {
+				return topic;
+			}
+
+			public void setTopic(final long topic) {
+				this.topic = topic;
+			}
+		}
+		public static class MemberInfo {
+
+			private String id;
+			private String clientId;
+			private String host;
+
+			public String getId() {
+				return id;
+			}
+
+			public void setId(final String id) {
+				this.id = id;
 			}
 
 			public String getClientId() {
@@ -94,90 +123,6 @@ public class DescribeOperationResponse implements OperationResponse {
 			public void setHost(final String host) {
 				this.host = host;
 			}
-
-			public MemberAssignment getAssignment() {
-				return assignment;
-			}
-
-			public void setAssignment(final MemberAssignment assignment) {
-				this.assignment = assignment;
-			}
-
-			public static class MemberAssignment {
-
-				private Collection<TopicPartition> topicPartitions;
-
-				public Collection<TopicPartition> getTopicPartitions() {
-					return topicPartitions;
-				}
-
-				public void setTopicPartitions(final Collection<TopicPartition> topicPartitions) {
-					this.topicPartitions = topicPartitions;
-				}
-
-				public static class TopicPartition {
-
-					private int partition;
-					private String topic;
-					private long topicLogEndOffset;
-					private OffsetMetadata offsetMetadata;
-
-					public int getPartition() {
-						return partition;
-					}
-
-					public void setPartition(final int partition) {
-						this.partition = partition;
-					}
-
-					public String getTopic() {
-						return topic;
-					}
-
-					public void setTopic(final String topic) {
-						this.topic = topic;
-					}
-
-					public OffsetMetadata getOffsetMetadata() {
-						return offsetMetadata;
-					}
-
-					public void setOffsetMetadata(final OffsetMetadata offsetMetadata) {
-						this.offsetMetadata = offsetMetadata;
-					}
-
-					public long getTopicLogEndOffset() {
-						return topicLogEndOffset;
-					}
-
-					public void setTopicLogEndOffset(final long topicLogEndOffset) {
-						this.topicLogEndOffset = topicLogEndOffset;
-					}
-
-					public static class OffsetMetadata {
-
-						private long offset;
-						private String metadata;
-
-						public OffsetMetadata(final long offset, final String metadata) {
-							this.offset = offset;
-							this.metadata = metadata;
-						}
-
-						public long getOffset() {
-							return offset;
-						}
-
-						public String getMetadata() {
-							return metadata;
-						}
-
-					}
-
-				}
-
-			}
 		}
-
 	}
 }
