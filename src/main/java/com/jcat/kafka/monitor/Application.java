@@ -6,19 +6,11 @@ import com.jcat.kafka.monitor.domain.service.ApplicationFactoryImpl;
 import com.jcat.kafka.monitor.domain.service.operation.OperationServiceImpl;
 import com.jcat.kafka.monitor.domain.service.cli.CommandLineArgumentParser;
 import com.jcat.kafka.monitor.domain.service.cli.CommandLineArgumentParserImpl;
-import com.jcat.kafka.monitor.domain.service.operation.writer.ConsoleOperationResponseWriter;
-import com.jcat.kafka.monitor.domain.service.operation.writer.OperationResponseWriter;
 import com.jcat.kafka.monitor.domain.service.validate.RequestValidator;
 import com.jcat.kafka.monitor.domain.service.validate.RequestValidatorImpl;
-import org.apache.kafka.clients.admin.AdminClient;
-import org.apache.kafka.clients.admin.AdminClientConfig;
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.clients.consumer.KafkaConsumer;
-import org.apache.kafka.common.serialization.Serdes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Properties;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
