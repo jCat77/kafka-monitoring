@@ -91,7 +91,7 @@ public class Application {
 		}
 		describeTask.setOperationResponseWriter(responseWriter);
 
-		scheduledExecutorService.scheduleAtFixedRate(describeTask, 0, 2, TimeUnit.SECONDS);
+		scheduledExecutorService.scheduleWithFixedDelay(describeTask, 0, 2, TimeUnit.SECONDS);
 	}
 
 }
