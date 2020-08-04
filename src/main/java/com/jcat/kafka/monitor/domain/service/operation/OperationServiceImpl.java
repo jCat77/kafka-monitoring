@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
 public class OperationServiceImpl implements OperationService {
 
 	private AdminClient adminClient;
-	private KafkaConsumer<String, String> kafkaConsumer;
+	private KafkaConsumer<?, ?> kafkaConsumer;
 
 	@Override
 	public Future<DescribeOperationResponse> describe(final DescribeOperationRequest describeOperationRequest) throws ExecutionException, InterruptedException {
@@ -142,11 +142,11 @@ public class OperationServiceImpl implements OperationService {
 		this.adminClient = adminClient;
 	}
 
-	public KafkaConsumer<String, String> getKafkaConsumer() {
+	public KafkaConsumer<?, ?> getKafkaConsumer() {
 		return kafkaConsumer;
 	}
 
-	public void setKafkaConsumer(final KafkaConsumer<String, String> kafkaConsumer) {
+	public void setKafkaConsumer(final KafkaConsumer<?, ?> kafkaConsumer) {
 		this.kafkaConsumer = kafkaConsumer;
 	}
 

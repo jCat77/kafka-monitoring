@@ -2,6 +2,7 @@ package com.jcat.kafka.monitor;
 
 import com.jcat.kafka.monitor.domain.model.cli.CommandLineRequest;
 import com.jcat.kafka.monitor.domain.model.task.DescribeTask;
+import com.jcat.kafka.monitor.domain.service.ApplicationFactoryImpl;
 import com.jcat.kafka.monitor.domain.service.operation.OperationServiceImpl;
 import com.jcat.kafka.monitor.domain.service.cli.CommandLineArgumentParser;
 import com.jcat.kafka.monitor.domain.service.cli.CommandLineArgumentParserImpl;
@@ -25,11 +26,7 @@ public class Application {
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(Application.class);
 
-	private CommandLineRequest commandLineRequest;
-
-	private CommandLineArgumentParser commandLineArgumentParser;
-
-	public static void main(String[] args) {
+	public static void main(String[] args) throws InterruptedException {
 
 		CommandLineArgumentParser commandLineArgumentParser = new CommandLineArgumentParserImpl();
 		CommandLineRequest commandLineRequest = commandLineArgumentParser.parse(args);
@@ -52,46 +49,28 @@ public class Application {
 			@Override
 			public Thread newThread(final Runnable r) {
 				Thread thread = new Thread(r);
-//				thread.setDaemon(true);
+				thread.setDaemon(true);
 				thread.setName("kafka-monitor-worker-" + counter.getAndIncrement());
 				return thread;
 			}
 		};
 		ScheduledExecutorService scheduledExecutorService = Executors.newSingleThreadScheduledExecutor(threadFactory);
 
+		ApplicationFactoryImpl factory = new ApplicationFactoryImpl();
 		OperationServiceImpl operationService = new OperationServiceImpl();
-
-		//admin client properties
-		Properties adminClientProperties = new Properties();
-		adminClientProperties.setProperty(AdminClientConfig.BOOTSTRAP_SERVERS_CONFIG, commandLineRequest.getBootstrapServer());
-		adminClientProperties.setProperty(AdminClientConfig.CLIENT_ID_CONFIG, "kafka-monitor-admin-client");
-
-		AdminClient adminClient = AdminClient.create(adminClientProperties);
-		operationService.setAdminClient(adminClient);
-
-		//kafka consumer properties
-		final Properties kafkaConsumerProperties = new Properties();
-		kafkaConsumerProperties.setProperty(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, commandLineRequest.getBootstrapServer());
-		kafkaConsumerProperties.setProperty(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, Serdes.String().deserializer().getClass().getName());
-		kafkaConsumerProperties.setProperty(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, Serdes.String().deserializer().getClass().getName());
-		kafkaConsumerProperties.setProperty(ConsumerConfig.GROUP_ID_CONFIG, "kafka-monitor-consumer-client");
-
-		KafkaConsumer<String, String> kafkaConsumer = new KafkaConsumer<>(kafkaConsumerProperties);
-		operationService.setKafkaConsumer(kafkaConsumer);
+		operationService.setAdminClient(factory.createAdminClient(commandLineRequest));
+		operationService.setKafkaConsumer(factory.createKafkaConsumer(commandLineRequest));
 
 		DescribeTask describeTask = new DescribeTask(commandLineRequest);
 		describeTask.setOperationService(operationService);
 
-		OperationResponseWriter responseWriter;
-		switch (commandLineRequest.getOut()) {
-			case prometheus:
-				throw new RuntimeException("Not implemented");
-			default:
-				responseWriter = new ConsoleOperationResponseWriter();
-		}
-		describeTask.setOperationResponseWriter(responseWriter);
+		describeTask.setOperationResponseWriter(factory.createOperationResponseWriter(commandLineRequest));
 
 		scheduledExecutorService.scheduleWithFixedDelay(describeTask, 0, 2, TimeUnit.SECONDS);
+
+		System.out.println("Started...");
+		Thread.currentThread().join();
+		System.out.println("Stopped");
 	}
 
 }
