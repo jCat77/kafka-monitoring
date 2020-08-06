@@ -1,6 +1,7 @@
 package com.jcat.kafka.monitor.configuration;
 
 import com.jcat.kafka.monitor.domain.model.Out;
+import com.jcat.kafka.monitor.domain.model.PrometheusConfiguration;
 
 public class ApplicationConfiguration {
 
@@ -11,6 +12,8 @@ public class ApplicationConfiguration {
 		DefaultValues defaultValues = new DefaultValues();
 		defaultValues.setInterval(2_000);
 		defaultValues.setOut(Out.console);
+		PrometheusConfiguration prometheusConfiguration = defaultValues.getPrometheusConfiguration();
+		prometheusConfiguration.setUrl("localhost:9091/metrics");
 		DEFAULT_VALUES = defaultValues;
 	}
 
@@ -20,6 +23,7 @@ public class ApplicationConfiguration {
 		private Out out;
 		private Integer interval; //in ms
 		private final IntervalConfiguration intervalConfiguration = new IntervalConfiguration(1000, 10_000);
+		private final PrometheusConfiguration prometheusConfiguration = new PrometheusConfiguration();
 
 		public Out getOut() {
 			return out;
@@ -41,6 +45,10 @@ public class ApplicationConfiguration {
 			return intervalConfiguration;
 		}
 
+		public PrometheusConfiguration getPrometheusConfiguration() {
+			return prometheusConfiguration;
+		}
+
 		public static class IntervalConfiguration {
 
 			private final int min;
@@ -59,6 +67,7 @@ public class ApplicationConfiguration {
 				return max;
 			}
 		}
+
 	}
 
 

@@ -4,7 +4,7 @@ import com.jcat.kafka.monitor.domain.model.cli.CommandLineRequest;
 import com.jcat.kafka.monitor.domain.model.request.DescribeOperationRequest;
 import com.jcat.kafka.monitor.domain.model.response.DescribeOperationResponse;
 import com.jcat.kafka.monitor.domain.service.operation.OperationService;
-import com.jcat.kafka.monitor.domain.service.operation.writer.OperationResponseWriter;
+import com.jcat.kafka.monitor.domain.service.operation.consumer.OperationResponseConsumer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,7 +17,7 @@ public class DescribeTask extends AbstractTask {
 	private static final Logger LOGGER = LoggerFactory.getLogger(DescribeTask.class);
 
 	private OperationService operationService;
-	private OperationResponseWriter operationResponseWriter;
+	private OperationResponseConsumer operationResponseWriter;
 
 	public DescribeTask(final CommandLineRequest commandLineRequest) {
 		super(commandLineRequest);
@@ -36,7 +36,7 @@ public class DescribeTask extends AbstractTask {
 			future = operationService.describe(describeOperationRequest);
 
 			//ok, if we have a result we must consume it
-			operationResponseWriter.writeAsync(future);
+			operationResponseWriter.consume(future.get());
 
 		} catch (Exception e) {
 			//log it and ignore
@@ -52,11 +52,11 @@ public class DescribeTask extends AbstractTask {
 		this.operationService = operationService;
 	}
 
-	public OperationResponseWriter getOperationResponseWriter() {
+	public OperationResponseConsumer getOperationResponseWriter() {
 		return operationResponseWriter;
 	}
 
-	public void setOperationResponseWriter(final OperationResponseWriter operationResponseWriter) {
+	public void setOperationResponseWriter(final OperationResponseConsumer operationResponseWriter) {
 		this.operationResponseWriter = operationResponseWriter;
 	}
 }

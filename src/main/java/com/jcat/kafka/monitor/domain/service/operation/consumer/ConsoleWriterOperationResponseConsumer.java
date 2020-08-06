@@ -1,4 +1,4 @@
-package com.jcat.kafka.monitor.domain.service.operation.writer;
+package com.jcat.kafka.monitor.domain.service.operation.consumer;
 
 import com.jcat.kafka.monitor.domain.model.response.DescribeOperationResponse;
 import com.jcat.kafka.monitor.domain.model.response.OperationResponse;
@@ -7,7 +7,7 @@ import java.util.Optional;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class ConsoleOperationResponseWriter implements OperationResponseWriter {
+public class ConsoleWriterOperationResponseConsumer implements OperationResponseConsumer {
 
 	private static final ExecutorService CONSOLE_WRITER_EXECUTOR;
 	private static final String EMPTY_VALUE = "-";
@@ -30,33 +30,18 @@ public class ConsoleOperationResponseWriter implements OperationResponseWriter {
 	}
 
 	@Override
-	public void write(final OperationResponse operationResponse) {
+	public Future<?> consume(final OperationResponse operationResponse) {
 		if (operationResponse instanceof DescribeOperationResponse) {
 			DescribeOperationResponse describeOperationResponse = (DescribeOperationResponse) operationResponse;
-			CONSOLE_WRITER_EXECUTOR.submit(() -> {
-				writeInternal(describeOperationResponse);
+			return CONSOLE_WRITER_EXECUTOR.submit(() -> {
+				writeDescrineOperationResponseInternal(describeOperationResponse);
 			});
+		} else {
+			throw new RuntimeException("unknown response type");
 		}
 	}
 
-	@Override
-	public Future<?> writeAsync(final Future<? extends OperationResponse> futureOperationResponse) {
-		return CONSOLE_WRITER_EXECUTOR.submit(() -> {
-			try {
-				OperationResponse operationResponse = futureOperationResponse.get();
-				if (operationResponse instanceof DescribeOperationResponse) {
-					DescribeOperationResponse describeOperationResponse = (DescribeOperationResponse) operationResponse;
-					//sout
-					writeInternal(describeOperationResponse);
-				}
-			} catch (Exception e) {
-				//ignore or log it, whar we can do here
-				System.out.println("Some error occurred when try to handle response");
-			}
-		});
-	}
-
-	private void writeInternal(DescribeOperationResponse describeOperationResponse) {
+	private void writeDescrineOperationResponseInternal(DescribeOperationResponse describeOperationResponse) {
 		describeOperationResponse.getTopicPartitions().forEach(tp -> {
 			System.out.format("%-30s", tp.getGroup());
 			System.out.format("%-15s", tp.getTopic());

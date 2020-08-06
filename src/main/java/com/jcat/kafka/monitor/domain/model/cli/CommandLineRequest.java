@@ -1,7 +1,9 @@
 package com.jcat.kafka.monitor.domain.model.cli;
 
+import com.jcat.kafka.monitor.configuration.ApplicationConfiguration;
 import com.jcat.kafka.monitor.domain.model.Operation;
 import com.jcat.kafka.monitor.domain.model.Out;
+import com.jcat.kafka.monitor.domain.model.PrometheusConfiguration;
 
 import java.time.Duration;
 
@@ -12,6 +14,7 @@ public class CommandLineRequest {
 	private String groups;
 	private Integer interval;
 	private Out out;
+	private PrometheusConfiguration prometheusConfiguration = ApplicationConfiguration.DEFAULT_VALUES.getPrometheusConfiguration();
 
 	public Operation getOperation() {
 		return operation;
@@ -51,5 +54,9 @@ public class CommandLineRequest {
 
 	public void setOut(final Out out) {
 		this.out = out;
+	}
+
+	public PrometheusConfiguration getPrometheusConfiguration() {
+		return prometheusConfiguration;
 	}
 }

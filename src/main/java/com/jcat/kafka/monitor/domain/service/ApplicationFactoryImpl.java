@@ -1,8 +1,9 @@
 package com.jcat.kafka.monitor.domain.service;
 
 import com.jcat.kafka.monitor.domain.model.cli.CommandLineRequest;
-import com.jcat.kafka.monitor.domain.service.operation.writer.ConsoleOperationResponseWriter;
-import com.jcat.kafka.monitor.domain.service.operation.writer.OperationResponseWriter;
+import com.jcat.kafka.monitor.domain.service.operation.consumer.ConsoleWriterOperationResponseConsumer;
+import com.jcat.kafka.monitor.domain.service.operation.consumer.OperationResponseConsumer;
+import com.jcat.kafka.monitor.domain.service.operation.consumer.PrometheusPushOperationResponseConsumer;
 import org.apache.kafka.clients.admin.AdminClient;
 import org.apache.kafka.clients.admin.AdminClientConfig;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -36,13 +37,14 @@ public class ApplicationFactoryImpl implements ApplicationFactory {
 	}
 
 	@Override
-	public OperationResponseWriter createOperationResponseWriter(final CommandLineRequest commandLineRequest) {
-		OperationResponseWriter responseWriter;
+	public OperationResponseConsumer createOperationResponseWriter(final CommandLineRequest commandLineRequest) {
+		OperationResponseConsumer responseWriter;
 		switch (commandLineRequest.getOut()) {
 			case prometheus:
-				throw new RuntimeException("Not implemented");
+				responseWriter = new PrometheusPushOperationResponseConsumer(commandLineRequest);
+				break;
 			default:
-				responseWriter = new ConsoleOperationResponseWriter();
+				responseWriter = new ConsoleWriterOperationResponseConsumer();
 		}
 		return responseWriter;
 	}

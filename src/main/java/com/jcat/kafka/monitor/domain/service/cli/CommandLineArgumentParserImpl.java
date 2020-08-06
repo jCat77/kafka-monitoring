@@ -3,16 +3,22 @@ package com.jcat.kafka.monitor.domain.service.cli;
 import com.jcat.kafka.monitor.domain.model.Operation;
 import com.jcat.kafka.monitor.domain.model.Out;
 import com.jcat.kafka.monitor.domain.model.cli.CommandLineRequest;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
 public class CommandLineArgumentParserImpl implements CommandLineArgumentParser {
+
+	private static final Logger LOGGER = LoggerFactory.getLogger(CommandLineArgumentParser.class);
 
 	private static final String PARAM_MARKER = "-";
 	private static final String BOOTSTRAP_SERVER_PARAM = "bootstrap-server";
 	private static final String GROUPS_PARAM = "groups";
 	private static final String INTERVAL_PARAM = "interval";
 	private static final String OUT_PARAM = "out";
+	private static final String PROMETHEUS_URL_PARAM = "prometheus-url";
+	private static final String PROMETHEUS_JOB_PARAM = "prometheus-job";
 
 	@Override
 	public CommandLineRequest parse(final String[] args) {
@@ -60,12 +66,18 @@ public class CommandLineArgumentParserImpl implements CommandLineArgumentParser 
 					String enumString = Arrays.stream(Out.values()).collect(StringBuilder::new, (b, s) -> {
 						b.append(s).append(",");
 					}, StringBuilder::append).toString();
-//					log.error("Illegal \"out\" argument value...can be one of \"" + enumString + "\"");
+					LOGGER.error("Illegal \"out\" argument value...can be one of \"" + enumString + "\"");
 				}
 				commandLineRequest.setOut(out);
 				break;
+			case PROMETHEUS_URL_PARAM:
+				commandLineRequest.getPrometheusConfiguration().setUrl(value);
+				break;
+			case PROMETHEUS_JOB_PARAM:
+				commandLineRequest.getPrometheusConfiguration().setJob(value);
+				break;
 			default:
-//				log.error("Argument " + argName + " is not resolved and will be ignored");
+				LOGGER.error("Argument " + argName + " is not resolved and will be ignored");
 		}
 	}
 

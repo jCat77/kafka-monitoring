@@ -26,6 +26,13 @@ public class DescribeOperationValidator implements RequestValidator {
 		Out out = commandLineRequest.getOut();
 		if (out == null) {
 			commandLineRequest.setOut(ApplicationConfiguration.DEFAULT_VALUES.getOut());
+		} else {
+			if (Out.prometheus.equals(out)) {
+				//check that all required props is exists
+				if (commandLineRequest.getPrometheusConfiguration().getJob() == null) {
+					throw new IllegalArgumentException("prometheus-job option is required for prometheus output");
+				}
+			}
 		}
 	}
 }
