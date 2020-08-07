@@ -7,6 +7,8 @@ import com.jcat.kafka.monitor.domain.model.response.OperationResponse;
 import io.prometheus.client.CollectorRegistry;
 import io.prometheus.client.Gauge;
 import io.prometheus.client.exporter.PushGateway;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Optional;
@@ -22,6 +24,7 @@ public class PrometheusPushOperationResponseConsumer implements OperationRespons
 	private final PrometheusConfiguration pc;
 
 	private static final ExecutorService PROMETHEUS_PUSHER_EXECUTOR_SERVICE;
+	private static final Logger LOGGER = LoggerFactory.getLogger(PrometheusPushOperationResponseConsumer.class);
 
 	static final Gauge kafkaConsumerGroupLagGauge = Gauge.build()
 			         .name("kafka_consumer_group_lag").help("Kafka consumer group lag for partition")
@@ -64,12 +67,9 @@ public class PrometheusPushOperationResponseConsumer implements OperationRespons
 				CollectorRegistry registry = CollectorRegistry.defaultRegistry;
 				try {
 					collectMetricsFromDescribeOperationResponseInternal(describeOperationResponse, registry);
-				} finally {
-					try {
-						pushGateway.pushAdd(registry, pc.getJob());
-					} catch (IOException e) {
-						e.printStackTrace();
-					}
+					pushGateway.pushAdd(registry, pc.getJob());
+				} catch (Exception e) {
+					LOGGER.error("Error when try to handle response={}", describeOperationResponse, e);
 				}
 			});
 		} else {
