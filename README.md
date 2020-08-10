@@ -16,7 +16,7 @@ java -jar target/km.jar -bootstrap-server localhost:9092 -groups cg1,cg2 -interv
     groups - consumer-group names insterested for;
     interval - fetch data interval;
     out - one of list: [console, prometheus];
-    prometheus-url - pushApi prometeus url (without proto, see example above)
+    prometheus-url - pushApi prometeus url (without proto, see example above); defautl localhost:9091/metrics
     prometheus-job - job name 
    
 
