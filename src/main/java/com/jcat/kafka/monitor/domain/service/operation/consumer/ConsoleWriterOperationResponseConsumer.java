@@ -54,7 +54,7 @@ public class ConsoleWriterOperationResponseConsumer implements OperationResponse
 			Optional<DescribeOperationResponse.TopicPartitionInfo.MemberInfo> m = Optional.ofNullable(tp.getMemberInfo());
 			System.out.format("%-50s", m.map(DescribeOperationResponse.TopicPartitionInfo.MemberInfo::getId).orElse(EMPTY_VALUE));
 			System.out.format("%-15s", m.map(DescribeOperationResponse.TopicPartitionInfo.MemberInfo::getClientId).orElse(EMPTY_VALUE));
-			System.out.format("%-20s", m.map(DescribeOperationResponse.TopicPartitionInfo.MemberInfo::getHost).orElse(EMPTY_VALUE));
+			System.out.format("%-10s", m.map(DescribeOperationResponse.TopicPartitionInfo.MemberInfo::getHost).orElse(EMPTY_VALUE));
 			System.out.println();
 		});
 	}
